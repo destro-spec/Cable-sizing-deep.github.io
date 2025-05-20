@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="cabledata.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .button {
+            background: linear-gradient(to right, #3b82f6, #60a5fa);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+            margin: 20px 0;
+            border: none;
+        }
+        .button:hover {
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="text-2xl font-bold mb-4">Calculator Test</h1>
+    
+    <p>This is a simple test to verify that the calculation function works properly.</p>
+    
+    <button id="testButton" class="button">Run Test Calculation</button>
+    
+    <div id="result" class="result">
+        <p>Result will appear here after calculation.</p>
+    </div>
+
+    <script>
+        // Simple test calculation function
+        function testCalculation() {
+            document.getElementById('result').innerHTML = '<p>Calculation started...</p>';
+            
+            try {
+                // Check if cableData is loaded
+                if (typeof cableData === 'undefined') {
+                    document.getElementById('result').innerHTML = '<p class="text-red-600">Error: cableData is not defined. Make sure cabledata.js is loaded.</p>';
+                    return;
+                }
+                
+                // Simple calculation
+                const baseValue = 100;
+                const factor = 0.85;
+                const result = baseValue * factor;
+                
+                document.getElementById('result').innerHTML = `
+                    <p class="text-green-600 font-bold">Calculation successful!</p>
+                    <p>Base value: ${baseValue}</p>
+                    <p>Factor: ${factor}</p>
+                    <p>Result: ${result}</p>
+                    <p class="mt-4">This confirms that basic JavaScript functionality is working.</p>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p class="text-red-600">Error during calculation: ${error.message}</p>`;
+            }
+        }
+        
+        // Add event listener to the button
+        document.getElementById('testButton').addEventListener('click', testCalculation);
+    </script>
+</body>
+</html>
