@@ -592,26 +592,44 @@ function displayEnhancedResults(
             shortCircuitStatusEl.classList.remove('text-green-600', 'text-red-600', 'font-bold');
         }
         
-        // Voltage drop
-        document.getElementById('voltageDropValue').textContent = `${voltageDrop.toFixed(1)} V`;
-        document.getElementById('voltageDropPercent').textContent = `${voltageDropPercent.toFixed(2)}%`;
-        document.getElementById('voltageDropStatus').textContent = voltageDropStatus;
-        
-        // Color code the status
+        // Voltage Drop Analysis
+        const voltageDropValueEl = document.getElementById('voltageDropValue');
+        const voltageDropPercentEl = document.getElementById('voltageDropPercent');
         const voltageDropStatusEl = document.getElementById('voltageDropStatus');
-        if (voltageDropStatus.includes("PASS")) {
-            voltageDropStatusEl.classList.remove('text-red-600');
-            voltageDropStatusEl.classList.add('text-green-600', 'font-bold');
-        } else if (voltageDropStatus.includes("FAIL")) {
-            voltageDropStatusEl.classList.remove('text-green-600');
-            voltageDropStatusEl.classList.add('text-red-600', 'font-bold');
-        } else {
-            voltageDropStatusEl.classList.remove('text-green-600', 'text-red-600', 'font-bold');
+        
+        if (voltageDropValueEl) voltageDropValueEl.textContent = voltageDrop.toFixed(2) + ' V';
+        if (voltageDropPercentEl) voltageDropPercentEl.textContent = voltageDropPercent.toFixed(2) + '%';
+        
+        if (voltageDropStatusEl) {
+            if (voltageDropStatus.includes('PASS')) {
+                voltageDropStatusEl.textContent = '✓ Within limits';
+                voltageDropStatusEl.className = 'font-medium text-green-600';
+            } else {
+                voltageDropStatusEl.textContent = '✗ Exceeds limits';
+                voltageDropStatusEl.className = 'font-medium text-red-600';
+            }
         }
         
-        // Power loss
-        document.getElementById('powerLossValue').textContent = `${powerLoss.toFixed(1)} W`;
-        document.getElementById('powerEfficiency').textContent = `${powerEfficiency.toFixed(2)}%`;
+        // Create Voltage Drop Chart - with error handling
+        try {
+            createVoltageDropChart(voltageDrop, voltageDropPercent, voltageDropStatus);
+        } catch (e) {
+            console.error("Error creating voltage drop chart:", e);
+        }
+        
+        // Display Power Loss values in the UI
+        const powerLossValueEl = document.getElementById('powerLossValue');
+        const powerEfficiencyEl = document.getElementById('powerEfficiency');
+        
+        if (powerLossValueEl) powerLossValueEl.textContent = powerLoss.toFixed(2) + ' kW';
+        if (powerEfficiencyEl) powerEfficiencyEl.textContent = powerEfficiency.toFixed(2) + '%';
+        
+        // Create Power Loss Chart with error handling
+        try {
+            createPowerLossChart(powerLoss, powerEfficiency);
+        } catch (e) {
+            console.error("Error creating power loss chart:", e);
+        }
         
         // Update the visualization if the function exists
         if (typeof renderCableVisualization === 'function') {
@@ -658,23 +676,177 @@ function displayEnhancedResults(
     }
 }
 
+// Create Voltage Drop Chart
+function createVoltageDropChart(voltageDrop, voltageDropPercent, voltageDropStatus) {
+    const ctx = document.getElementById('voltageDropChart');
+    
+    // Clear any existing chart
+    if (window.voltageDropChartInstance) {
+        window.voltageDropChartInstance.destroy();
+    }
+    
+    // Set colors based on status
+    const statusColor = voltageDropStatus === 'OK' ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)';
+    const statusColorLight = voltageDropStatus === 'OK' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+    
+    // Create the chart
+    window.voltageDropChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Voltage Drop'],
+            datasets: [
+                {
+                    label: 'Actual Drop (' + voltageDropPercent.toFixed(2) + '%)',
+                    data: [voltageDropPercent],
+                    backgroundColor: statusColorLight,
+                    borderColor: statusColor,
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    barThickness: 40
+                },
+                {
+                    label: 'Maximum Allowed (5%)',
+                    data: [5], // Standard maximum allowed voltage drop
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    barThickness: 40
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        usePointStyle: true,
+                        pointStyle: 'rect'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.raw + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: Math.max(voltageDropPercent * 1.2, 6), // Set max to either 20% more than actual or 6%, whichever is higher
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Voltage Drop (%)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Create Power Loss Chart
+function createPowerLossChart(powerLoss, powerEfficiency) {
+    const ctx = document.getElementById('powerLossChart');
+    
+    // Clear any existing chart
+    if (window.powerLossChartInstance) {
+        window.powerLossChartInstance.destroy();
+    }
+    
+    // Create the chart - using doughnut chart to show efficiency vs loss
+    window.powerLossChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Efficiency', 'Power Loss'],
+            datasets: [{
+                data: [powerEfficiency, 100 - powerEfficiency],
+                backgroundColor: [
+                    'rgba(34, 197, 94, 0.7)',  // Green for efficiency
+                    'rgba(239, 68, 68, 0.7)'   // Red for power loss
+                ],
+                borderColor: [
+                    'rgba(34, 197, 94, 1)',
+                    'rgba(239, 68, 68, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        usePointStyle: true,
+                        pointStyle: 'rect'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== undefined) {
+                                if (context.label === 'Efficiency') {
+                                    label += context.parsed.toFixed(2) + '%';
+                                } else {
+                                    label += context.parsed.toFixed(2) + '% (' + powerLoss.toFixed(2) + ' kW)';
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        }
+    });
+}
+
 // PDF Download functionality
 function downloadPdfReport() {
+    // Load jsPDF with plugins
     const { jsPDF } = window.jspdf;
     
     // Create a new PDF document
     const pdf = new jsPDF('p', 'mm', 'a4');
     
-    // Add title
+    // Add title with professional styling
+    pdf.setFillColor(59, 130, 246); // Blue header background
+    pdf.rect(0, 0, 210, 15, 'F');
+    pdf.setTextColor(255, 255, 255); // White text
     pdf.setFontSize(16);
-    pdf.text('Cable Current Rating Calculation Report', 105, 20, { align: 'center' });
+    pdf.text('PowerCalc - Cable Current Rating Report', 105, 10, { align: 'center' });
+    
+    // Reset text color for rest of document
+    pdf.setTextColor(0, 0, 0);
     pdf.setFontSize(12);
     
-    // Add date
+    // Add date with styling
     const today = new Date();
-    pdf.text(`Generated on: ${today.toLocaleDateString()}`, 105, 30, { align: 'center' });
+    pdf.text(`Generated on: ${today.toLocaleDateString()}`, 105, 25, { align: 'center' });
     
-    // Add cable specifications
+    // Add cable specifications with styling
+    pdf.setFillColor(59, 130, 246, 0.1); // Light blue background
+    pdf.roundedRect(15, 35, 180, 50, 3, 3, 'F');
     pdf.setFontSize(14);
     pdf.text('Cable Specifications:', 20, 45);
     pdf.setFontSize(10);
@@ -689,9 +861,11 @@ function downloadPdfReport() {
     pdf.text(`Size: ${size} mm²`, 30, 69);
     pdf.text(`Voltage Rating: ${voltage}`, 30, 76);
     
-    // Add installation details
+    // Add installation details with styling
+    pdf.setFillColor(59, 130, 246, 0.1); // Light blue background
+    pdf.roundedRect(15, 85, 180, 30, 3, 3, 'F');
     pdf.setFontSize(14);
-    pdf.text('Installation Details:', 20, 90);
+    pdf.text('Installation Details:', 20, 95);
     pdf.setFontSize(10);
     
     const installation = document.getElementById('installationType').value;
@@ -712,9 +886,11 @@ function downloadPdfReport() {
         }
     }
     
-    // Add calculation results
+    // Add calculation results with styling
+    pdf.setFillColor(59, 130, 246, 0.1); // Light blue background
+    pdf.roundedRect(15, 120, 180, 30, 3, 3, 'F');
     pdf.setFontSize(14);
-    pdf.text('Calculation Results:', 20, 125);
+    pdf.text('Calculation Results:', 20, 130);
     pdf.setFontSize(10);
     
     const baseRating = document.getElementById('baseRatingValue').textContent;
@@ -727,9 +903,11 @@ function downloadPdfReport() {
         pdf.text(`Number of Circuits: ${circuits}`, 30, 149);
     }
     
-    // Add recommendation
+    // Add recommendation with styling
+    pdf.setFillColor(22, 163, 74, 0.1); // Light green background
+    pdf.roundedRect(15, 155, 180, 30, 3, 3, 'F');
     pdf.setFontSize(14);
-    pdf.text('Cable Recommendation:', 20, 160);
+    pdf.text('Cable Recommendation:', 20, 165);
     pdf.setFontSize(10);
     
     const recommendedSize = document.getElementById('recommendedSize').textContent;
@@ -738,9 +916,11 @@ function downloadPdfReport() {
     pdf.text(`Recommended Size: ${recommendedSize}`, 30, 170);
     pdf.text(`Safety Margin: ${safetyMargin}`, 30, 177);
     
-    // Add short circuit analysis
+    // Add short circuit analysis with styling
+    pdf.setFillColor(59, 130, 246, 0.1); // Light blue background
+    pdf.roundedRect(15, 190, 180, 35, 3, 3, 'F');
     pdf.setFontSize(14);
-    pdf.text('Short Circuit Analysis:', 20, 195);
+    pdf.text('Short Circuit Analysis:', 20, 200);
     pdf.setFontSize(10);
     
     const shortCircuitValue = document.getElementById('shortCircuitValue').textContent;
@@ -751,7 +931,7 @@ function downloadPdfReport() {
     pdf.text(`Maximum Withstand: ${shortCircuitWithstand}`, 30, 212);
     pdf.text(`Status: ${shortCircuitStatus}`, 30, 219);
     
-    // Add voltage drop analysis
+    // Add voltage drop analysis with graphical representation
     pdf.setFontSize(14);
     pdf.text('Voltage Drop Analysis:', 20, 235);
     pdf.setFontSize(10);
@@ -764,17 +944,101 @@ function downloadPdfReport() {
     pdf.text(`Percentage: ${voltageDropPercent}`, 30, 252);
     pdf.text(`Status: ${voltageDropStatus}`, 30, 259);
     
-    // Add power loss analysis
+    // Extract numeric value from percentage
+    const voltageDropPercentValue = parseFloat(voltageDropPercent.replace('%', ''));
+    const isVoltageDropOk = voltageDropStatus.includes('Within limits') || voltageDropStatus.includes('PASS');
+    
+    // Draw voltage drop bar chart
+    const vdChartX = 30;
+    const vdChartY = 265;
+    const vdChartWidth = 150;
+    const vdChartHeight = 30;
+    
+    // Draw chart background
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setFillColor(240, 240, 240);
+    pdf.roundedRect(vdChartX, vdChartY, vdChartWidth, vdChartHeight, 2, 2, 'FD');
+    
+    // Draw max allowed line
+    const maxAllowedX = vdChartX + (vdChartWidth * 0.05); // 5% mark
+    pdf.setDrawColor(59, 130, 246); // Blue
+    pdf.setLineWidth(0.5);
+    pdf.line(maxAllowedX, vdChartY, maxAllowedX, vdChartY + vdChartHeight);
+    
+    // Calculate width for actual voltage drop (max 100%)
+    const actualWidth = Math.min(voltageDropPercentValue / 100, 1) * vdChartWidth;
+    
+    // Draw actual voltage drop bar
+    pdf.setFillColor(isVoltageDropOk ? 34, 197, 94 : 239, 68, 68); // Green if OK, Red if not
+    pdf.roundedRect(vdChartX, vdChartY, actualWidth, vdChartHeight, 2, 2, 'F');
+    
+    // Add chart legend
+    pdf.setFontSize(8);
+    pdf.text('Actual Drop', vdChartX, vdChartY + vdChartHeight + 10);
+    pdf.setFillColor(isVoltageDropOk ? 34, 197, 94 : 239, 68, 68);
+    pdf.rect(vdChartX + 25, vdChartY + vdChartHeight + 6, 5, 5, 'F');
+    
+    pdf.text('Max Allowed (5%)', vdChartX + 40, vdChartY + vdChartHeight + 10);
+    pdf.setFillColor(59, 130, 246);
+    pdf.rect(vdChartX + 80, vdChartY + vdChartHeight + 6, 5, 5, 'F');
+    
+    // Add power loss analysis with graphical representation
     pdf.setFontSize(14);
-    pdf.text('Power Loss Analysis:', 20, 275);
+    pdf.text('Power Loss Analysis:', 20, 305);
     pdf.setFontSize(10);
     
     const powerLossValue = document.getElementById('powerLossValue').textContent;
     const powerEfficiency = document.getElementById('powerEfficiency').textContent;
     
-    pdf.text(`Power Loss: ${powerLossValue}`, 30, 285);
-    pdf.text(`Efficiency: ${powerEfficiency}`, 30, 292);
+    pdf.text(`Power Loss: ${powerLossValue}`, 30, 315);
+    pdf.text(`Efficiency: ${powerEfficiency}`, 30, 322);
+    
+    // Extract numeric values
+    const efficiencyValue = parseFloat(powerEfficiency.replace('%', ''));
+    const lossValue = 100 - efficiencyValue;
+    
+    // Draw power loss pie chart
+    const pieX = 105;
+    const pieY = 345;
+    const pieRadius = 25;
+    
+    // Draw efficiency portion (green)
+    pdf.setFillColor(34, 197, 94); // Green for efficiency
+    pdf.circle(pieX, pieY, pieRadius, 'F');
+    
+    // Draw loss portion (red) as a sector if loss > 0
+    if (lossValue > 0) {
+        pdf.setFillColor(239, 68, 68); // Red for loss
+        
+        // Calculate angles for the loss sector
+        const startAngle = 0;
+        const endAngle = (lossValue / 100) * 2 * Math.PI;
+        
+        // Draw sector
+        pdf.ellipse(pieX, pieY, pieRadius, pieRadius, 'F', startAngle, endAngle);
+    }
+    
+    // Add center circle for donut effect
+    pdf.setFillColor(255, 255, 255); // White center
+    pdf.circle(pieX, pieY, pieRadius * 0.6, 'F');
+    
+    // Add chart legend
+    pdf.setFontSize(8);
+    pdf.text('Efficiency', pieX - pieRadius, pieY + pieRadius + 15);
+    pdf.setFillColor(34, 197, 94);
+    pdf.rect(pieX - pieRadius + 20, pieY + pieRadius + 11, 5, 5, 'F');
+    
+    pdf.text('Power Loss', pieX + 5, pieY + pieRadius + 15);
+    pdf.setFillColor(239, 68, 68);
+    pdf.rect(pieX + 30, pieY + pieRadius + 11, 5, 5, 'F');
+    
+    // Add footer
+    pdf.setFillColor(59, 130, 246, 0.1); // Light blue background
+    pdf.rect(0, 277, 210, 20, 'F');
+    pdf.setFontSize(8);
+    pdf.text('PowerCalc - Professional Power Plant Engineering Solutions', 105, 283, { align: 'center' });
+    pdf.text('© ' + new Date().getFullYear() + ' - All Rights Reserved', 105, 288, { align: 'center' });
     
     // Save the PDF
-    pdf.save('cable-calculation-report.pdf');
+    pdf.save('PowerCalc-Cable-Report.pdf');
 } 
