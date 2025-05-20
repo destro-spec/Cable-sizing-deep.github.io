@@ -467,6 +467,7 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="cabledata.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
@@ -700,14 +701,19 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="container mx-auto px-4 py-8 max-w-7xl bg-gradient-to-b from-blue-50 to-white">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Form Section - 2/3 width on large screens -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-xl">
                     <!-- Header -->
-                    <div class="bg-blue-600 px-6 py-4">
-                        <h1 class="text-2xl font-bold text-white">Cable Current Rating Calculator</h1>
+                    <div class="bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-4 shadow-lg">
+                        <h1 class="text-2xl font-bold text-white flex items-center">
+                            <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Cable Current Rating Calculator
+                        </h1>
                         <p class="text-blue-100">Based on IS 3961 (Part 7) : 2017</p>
                     </div>
 
@@ -986,7 +992,10 @@
 
                             <!-- Calculate Button -->
                             <div class="pt-4">
-                                <button type="button" id="calculateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition duration-150 ease-in-out">
+                                <button type="button" id="calculateBtn" onclick="directCalculate()" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-md transition duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                    </svg>
                                     Calculate & Recommend Cable
                                 </button>
                             </div>
@@ -997,9 +1006,14 @@
 
             <!-- Results Section - 1/3 width on large screens -->
             <div class="lg:col-span-1">
-                <div id="resultsSection" class="bg-white rounded-lg shadow-md overflow-hidden h-full">
-                    <div class="bg-blue-600 px-6 py-4">
-                        <h2 class="text-xl font-bold text-white">Calculation Results</h2>
+                <div id="resultsSection" class="bg-white rounded-lg shadow-lg overflow-hidden h-full border border-gray-200 transition-all duration-300 hover:shadow-xl">
+                    <div class="bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-4 shadow-lg">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            Calculation Results
+                        </h2>
                         <p class="text-blue-100">Click calculate after selecting parameters</p>
                     </div>
                     <div class="p-6">
@@ -1109,6 +1123,9 @@
                                     <span class="text-gray-600">Status:</span>
                                     <span id="voltageDropStatus" class="font-medium">-</span>
                                 </div>
+                                <div class="mt-4">
+                                    <canvas id="voltageDropChart" width="100%" height="150"></canvas>
+                                </div>
                             </div>
                         </div>
 
@@ -1123,11 +1140,14 @@
                                     <span class="text-gray-600">Efficiency:</span>
                                     <span id="powerEfficiency" class="font-medium">-</span>
                                 </div>
+                                <div class="mt-4">
+                                    <canvas id="powerLossChart" width="100%" height="150"></canvas>
+                                </div>
                             </div>
                         </div>
 
                         <div class="mt-6">
-                            <button id="downloadPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center justify-center w-full">
+                            <button id="downloadPdfBtn" class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out flex items-center justify-center w-full shadow-md hover:shadow-lg transform hover:scale-105">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -3022,12 +3042,461 @@
         });
     </script>
     
-    <!-- Add enhanced calculation scripts -->
+    <!-- Add enhanced calculation scripts with proper loading order -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="enhanced-calculations.js"></script>
+    <!-- Add the fixed calculator script -->
+    <script src="fix-calculator.js"></script>
+    <!-- Add the PDF generator script -->
+    <script src="pdf-generator.js"></script>
     
     <script>
+        // Direct calculation function that will ensure correct results
+        function directCalculate() {
+            console.log("Starting direct calculation...");
+            
+            try {
+                // Check if cableData is defined
+                if (typeof cableData === 'undefined') {
+                    console.error("cableData is undefined. Make sure cabledata.js is loaded correctly.");
+                    alert("Error: Cable data not loaded. Please refresh the page and try again.");
+                    return;
+                }
+                
+                // Get form values
+                const material = document.getElementById('conductorMaterial').value;
+                const construction = document.getElementById('cableConstruction').value;
+                const size = parseInt(document.getElementById('conductorSize').value);
+                const voltage = document.getElementById('voltageRating').value;
+                const installation = document.getElementById('installationType').value;
+                const temperature = parseInt(document.getElementById('temperature').value);
+                const circuits = parseInt(document.getElementById('numberOfCircuits').value) || 1;
+                
+                console.log("Form values:", { material, construction, size, voltage, installation, temperature, circuits });
+                
+                // Get the base rating from cableData
+                let baseRating = 0;
+                let cableType = '';
+                
+                if (material === 'copper') {
+                    cableType = construction === 'singleCore' ? 'singleCoreCopper' : 'threeCoreCopper';
+                } else {
+                    cableType = construction === 'singleCore' ? 'singleCoreAluminum' : 'threeCoreAluminum';
+                }
+                
+                console.log("Cable type:", cableType);
+                
+                if (!cableData[cableType]) {
+                    alert("Error: Cable type data not found.");
+                    return;
+                }
+                
+                const voltageData = cableData[cableType][voltage];
+                if (!voltageData) {
+                    alert("Error: Voltage data not found.");
+                    return;
+                }
+                
+                let sizeIndex = -1;
+                if (construction === 'singleCore') {
+                    sizeIndex = cableData.conductorSizes.singleCore.indexOf(size);
+                    const arrangement = document.getElementById('cableArrangement').value;
+                    
+                    if (voltageData[installation] && voltageData[installation][arrangement]) {
+                        if (sizeIndex >= 0 && sizeIndex < voltageData[installation][arrangement].length) {
+                            baseRating = voltageData[installation][arrangement][sizeIndex];
+                        }
+                    }
+                } else {
+                    sizeIndex = cableData.conductorSizes.threeCore.indexOf(size);
+                    if (voltageData[installation]) {
+                        if (sizeIndex >= 0 && sizeIndex < voltageData[installation].length) {
+                            baseRating = voltageData[installation][sizeIndex];
+                        }
+                    }
+                }
+                
+                if (baseRating === 0) {
+                    alert("Error: Could not find base rating for the selected parameters.");
+                    return;
+                }
+                
+                console.log("Base rating:", baseRating);
+                
+                // Calculate derating factors
+                let tempFactor = 1.0;
+                if (installation === 'inAir') {
+                    // Air temperature derating
+                    const airTemps = cableData.temperatureFactors.air.temperatures;
+                    const airFactors = cableData.temperatureFactors.air.factors;
+                    for (let i = 0; i < airTemps.length; i++) {
+                        if (airTemps[i] === temperature) {
+                            tempFactor = airFactors[i];
+                            break;
+                        }
+                    }
+                } else {
+                    // Ground temperature derating
+                    const groundTemps = cableData.temperatureFactors.ground.temperatures;
+                    const groundFactors = cableData.temperatureFactors.ground.factors;
+                    for (let i = 0; i < groundTemps.length; i++) {
+                        if (groundTemps[i] === temperature) {
+                            tempFactor = groundFactors[i];
+                            break;
+                        }
+                    }
+                }
+                
+                // Depth factor (simplified)
+                let depthFactor = 1.0;
+                if (installation !== 'inAir') {
+                    const depth = parseInt(document.getElementById('depthOfLaying').value);
+                    if (depth > 900) {
+                        depthFactor = 0.95; // Simplified derating for depths > 900mm
+                    }
+                }
+                
+                // Soil resistivity factor (simplified)
+                let resistivityFactor = 1.0;
+                if (installation !== 'inAir') {
+                    const resistivity = parseFloat(document.getElementById('thermalResistivity').value);
+                    if (resistivity !== 1.5) {
+                        resistivityFactor = resistivity > 1.5 ? 0.9 : 1.1; // Simplified
+                    }
+                }
+                
+                // Grouping factor (simplified)
+                let groupingFactor = 1.0;
+                if (circuits > 1) {
+                    // Simple grouping factor estimation
+                    if (circuits === 2) {
+                        groupingFactor = 0.9;
+                    } else if (circuits <= 4) {
+                        groupingFactor = 0.8;
+                    } else if (circuits <= 6) {
+                        groupingFactor = 0.75;
+                    } else {
+                        groupingFactor = 0.7;
+                    }
+                }
+                
+                // Calculate total derating factor and final rating
+                const totalFactor = tempFactor * depthFactor * resistivityFactor * groupingFactor;
+                const finalRating = Math.round(baseRating * totalFactor);
+                const finalRatingTotal = finalRating * circuits;
+                
+                console.log("Derating factors:", { tempFactor, depthFactor, resistivityFactor, groupingFactor, totalFactor });
+                console.log("Final rating:", finalRating, "A");
+                
+                // Display results
+                document.getElementById('baseRatingDesc').textContent = 
+                    `${material === 'copper' ? 'Copper' : 'Aluminum'} ${construction === 'singleCore' ? 'Single-Core' : 'Three-Core'}, ${voltage}, ${size} mm²`;
+                document.getElementById('baseRatingValue').textContent = `${baseRating} A`;
+                
+                document.getElementById('temperatureFactorValue').textContent = tempFactor.toFixed(2);
+                
+                const depthFactorRow = document.getElementById('depthFactorRow');
+                const resistivityFactorRow = document.getElementById('resistivityFactorRow');
+                
+                if (installation !== 'inAir') {
+                    depthFactorRow.classList.remove('hidden');
+                    resistivityFactorRow.classList.remove('hidden');
+                    document.getElementById('depthFactorValue').textContent = depthFactor.toFixed(2);
+                    document.getElementById('resistivityFactorValue').textContent = resistivityFactor.toFixed(2);
+                } else {
+                    depthFactorRow.classList.add('hidden');
+                    resistivityFactorRow.classList.add('hidden');
+                }
+                
+                document.getElementById('groupingFactorValue').textContent = groupingFactor.toFixed(2);
+                document.getElementById('totalDeratingFactor').textContent = totalFactor.toFixed(3);
+                
+                if (circuits > 1) {
+                    document.getElementById('finalRatingValue').textContent = `${finalRating} A × ${circuits} = ${finalRatingTotal} A`;
+                } else {
+                    document.getElementById('finalRatingValue').textContent = `${finalRating} A`;
+                }
+                
+                // Calculate recommended size
+                const requiredCurrent = parseFloat(document.getElementById('requiredCurrent').value) || 0;
+                let recommendedSize = size;
+                let safetyMargin = 0;
+                
+                if (requiredCurrent > 0) {
+                    const requiredCurrentPerCircuit = requiredCurrent / circuits;
+                    const sizesArray = cableData.conductorSizes[construction];
+                    
+                    // Find smallest cable size that can handle the required current
+                    for (let i = 0; i < sizesArray.length; i++) {
+                        const testSize = sizesArray[i];
+                        let testBaseRating = 0;
+                        
+                        if (construction === 'singleCore') {
+                            const arrangement = document.getElementById('cableArrangement').value;
+                            if (voltageData[installation] && voltageData[installation][arrangement] && i < voltageData[installation][arrangement].length) {
+                                testBaseRating = voltageData[installation][arrangement][i];
+                            }
+                        } else {
+                            if (voltageData[installation] && i < voltageData[installation].length) {
+                                testBaseRating = voltageData[installation][i];
+                            }
+                        }
+                        
+                        if (testBaseRating * totalFactor >= requiredCurrentPerCircuit) {
+                            recommendedSize = testSize;
+                            break;
+                        }
+                    }
+                    
+                    safetyMargin = ((finalRatingTotal / requiredCurrent) - 1) * 100;
+                }
+                
+                document.getElementById('recommendedSize').textContent = `${recommendedSize} mm²`;
+                document.getElementById('safetyMargin').textContent = safetyMargin > 0 ? 
+                    `${safetyMargin.toFixed(1)}%` : "Inadequate";
+                
+                // Calculate short circuit withstand
+                const shortCircuitCurrent = parseFloat(document.getElementById('shortCircuitCurrent').value) || 0;
+                const faultDuration = parseFloat(document.getElementById('faultDuration').value) || 1;
+                let shortCircuitWithstand = 0;
+                let shortCircuitStatus = "N/A";
+                
+                if (shortCircuitCurrent > 0) {
+                    const kValue = material === 'copper' ? 143 : 94;
+                    shortCircuitWithstand = Math.round((kValue * size / Math.sqrt(faultDuration)) / 1000); // Convert to kA
+                    shortCircuitStatus = shortCircuitWithstand >= shortCircuitCurrent ? "✓ PASS" : "✗ FAIL";
+                }
+                
+                document.getElementById('shortCircuitValue').textContent = `${shortCircuitCurrent} kA`;
+                document.getElementById('shortCircuitWithstand').textContent = `${shortCircuitWithstand} kA`;
+                document.getElementById('shortCircuitStatus').textContent = shortCircuitStatus;
+                
+                const shortCircuitStatusEl = document.getElementById('shortCircuitStatus');
+                if (shortCircuitStatus.includes("PASS")) {
+                    shortCircuitStatusEl.className = 'font-medium text-green-600';
+                } else if (shortCircuitStatus.includes("FAIL")) {
+                    shortCircuitStatusEl.className = 'font-medium text-red-600';
+                }
+                
+                // Calculate voltage drop
+                const cableLength = parseFloat(document.getElementById('cableLength').value) || 100;
+                const supplyVoltage = parseFloat(document.getElementById('supplyVoltage').value) || 0;
+                const maxVoltageDrop = parseFloat(document.getElementById('maxVoltageDrop').value) || 5;
+                let voltageDrop = 0;
+                let voltageDropPercent = 0;
+                let voltageDropStatus = "N/A";
+                
+                if (supplyVoltage > 0 && requiredCurrent > 0) {
+                    // Simplified resistance values
+                    const resistanceValues = {
+                        copper: {
+                            25: 0.727, 35: 0.524, 50: 0.387, 70: 0.268, 95: 0.193,
+                            120: 0.153, 150: 0.124, 185: 0.0991, 240: 0.0754, 300: 0.0601,
+                            400: 0.0470, 500: 0.0366, 630: 0.0283, 800: 0.0221, 1000: 0.0176
+                        },
+                        aluminum: {
+                            25: 1.20, 35: 0.868, 50: 0.641, 70: 0.443, 95: 0.320,
+                            120: 0.253, 150: 0.206, 185: 0.164, 240: 0.125, 300: 0.100,
+                            400: 0.0778, 500: 0.0605, 630: 0.0469, 800: 0.0367, 1000: 0.0291
+                        }
+                    };
+                    
+                    const resistancePerKm = resistanceValues[material][recommendedSize] || 0.1;
+                    const resistanceTotal = resistancePerKm * cableLength / 1000; // Convert to ohms
+                    const currentPerCircuit = requiredCurrent / circuits;
+                    
+                    if (construction === 'threeCore' || (construction === 'singleCore' && circuits >= 3)) {
+                        // Three-phase calculation
+                        voltageDrop = Math.sqrt(3) * currentPerCircuit * resistanceTotal;
+                    } else {
+                        // Single-phase calculation
+                        voltageDrop = currentPerCircuit * resistanceTotal;
+                    }
+                    
+                    voltageDropPercent = (voltageDrop / supplyVoltage) * 100;
+                    voltageDropStatus = voltageDropPercent <= maxVoltageDrop ? "✓ PASS" : "✗ FAIL";
+                }
+                
+                document.getElementById('voltageDropValue').textContent = `${voltageDrop.toFixed(2)} V`;
+                document.getElementById('voltageDropPercent').textContent = `${voltageDropPercent.toFixed(2)}%`;
+                document.getElementById('voltageDropStatus').textContent = voltageDropStatus;
+                
+                const voltageDropStatusEl = document.getElementById('voltageDropStatus');
+                if (voltageDropStatus.includes("PASS")) {
+                    voltageDropStatusEl.className = 'font-medium text-green-600';
+                } else if (voltageDropStatus.includes("FAIL")) {
+                    voltageDropStatusEl.className = 'font-medium text-red-600';
+                }
+                
+                // Calculate power loss
+                let powerLoss = 0;
+                let powerEfficiency = 0;
+                
+                if (requiredCurrent > 0 && supplyVoltage > 0) {
+                    const resistancePerKm = resistanceValues[material][recommendedSize] || 0.1;
+                    const resistanceTotal = resistancePerKm * cableLength / 1000; // Convert to ohms
+                    const currentPerCircuit = requiredCurrent / circuits;
+                    
+                    if (construction === 'threeCore' || (construction === 'singleCore' && circuits >= 3)) {
+                        // Three-phase power loss
+                        powerLoss = 3 * Math.pow(currentPerCircuit, 2) * resistanceTotal / 1000; // Convert to kW
+                    } else {
+                        // Single-phase power loss
+                        powerLoss = Math.pow(currentPerCircuit, 2) * resistanceTotal / 1000; // Convert to kW
+                    }
+                    
+                    const apparentPower = supplyVoltage * requiredCurrent * 
+                        (construction === 'threeCore' || (construction === 'singleCore' && circuits >= 3) ? Math.sqrt(3) : 1) / 1000; // kVA
+                    
+                    powerEfficiency = apparentPower > 0 ? 100 - (powerLoss / apparentPower * 100) : 0;
+                }
+                
+                document.getElementById('powerLossValue').textContent = `${powerLoss.toFixed(2)} kW`;
+                document.getElementById('powerEfficiency').textContent = `${powerEfficiency.toFixed(2)}%`;
+                
+                // Create charts for voltage drop and power loss
+                createVoltageDropChart(voltageDropPercent, maxVoltageDrop, voltageDropStatus.includes("PASS"));
+                createPowerLossChart(powerEfficiency);
+                
+                // Make results section visible
+                document.getElementById('resultsSection').classList.remove('hidden');
+                
+                console.log("Calculation completed successfully!");
+            } catch (error) {
+                console.error("Error in calculation:", error);
+                alert("An error occurred during calculation: " + error.message);
+            }
+        }
+        
+        // Create voltage drop chart
+        function createVoltageDropChart(voltageDropPercent, maxAllowed, isWithinLimits) {
+            const ctx = document.getElementById('voltageDropChart');
+            if (!ctx) return;
+            
+            // Clear any existing chart
+            if (window.voltageDropChartInstance) {
+                window.voltageDropChartInstance.destroy();
+            }
+            
+            // Set colors based on status
+            const statusColor = isWithinLimits ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)';
+            const statusColorLight = isWithinLimits ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+            
+            // Create the chart
+            window.voltageDropChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Voltage Drop'],
+                    datasets: [
+                        {
+                            label: 'Actual Drop (' + voltageDropPercent.toFixed(2) + '%)',
+                            data: [voltageDropPercent],
+                            backgroundColor: statusColorLight,
+                            borderColor: statusColor,
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            barThickness: 40
+                        },
+                        {
+                            label: 'Maximum Allowed (' + maxAllowed + '%)',
+                            data: [maxAllowed],
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            barThickness: 40
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                usePointStyle: true,
+                                pointStyle: 'rect'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(voltageDropPercent * 1.2, maxAllowed * 1.2),
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Voltage Drop (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create power loss chart
+        function createPowerLossChart(efficiency) {
+            const ctx = document.getElementById('powerLossChart');
+            if (!ctx) return;
+            
+            // Clear any existing chart
+            if (window.powerLossChartInstance) {
+                window.powerLossChartInstance.destroy();
+            }
+            
+            // Calculate loss percentage
+            const lossPercentage = 100 - efficiency;
+            
+            // Create the chart
+            window.powerLossChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Efficiency', 'Power Loss'],
+                    datasets: [{
+                        data: [efficiency, lossPercentage],
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.7)',  // Green for efficiency
+                            'rgba(239, 68, 68, 0.7)'   // Red for power loss
+                        ],
+                        borderColor: [
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(239, 68, 68, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                usePointStyle: true,
+                                pointStyle: 'rect'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
         // Add event listener for the PDF download button
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('downloadPdfBtn').addEventListener('click', function() {
